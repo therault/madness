@@ -352,27 +352,26 @@ namespace madness {
 #if HAVE_PARSEC
         //////////// Parsec Related Begin ////////////////////
         /* Scheduler init*/
-	int argc = 1;
-	char ** argv = (char**)malloc(2*sizeof(char*));
+        int argc = 1;
+        char ** argv = (char**)malloc(2*sizeof(char*));
         argv[0]=(char*)malloc(2*sizeof(char));
         char tmp[] = "t";
         strcpy(argv[0], tmp);
-	//argv[1] = NULL;
-	argv[1] = NULL;
+        //argv[1] = NULL;
+        argv[1] = NULL;
         ThreadPool::parsec = dague_init(-1, &argc, &argv);
+        /** We initialize with one fake task to keep the scheduler running */
+        madness_handle.nb_tasks = 1; 
         if( 0 != dague_enqueue(ThreadPool::parsec, &madness_handle) ) {
-	  std::cout << "ERROR: dague_enqueue!!" << std::endl;
-	}
-	std::cout << "dague_enqueue!! <" << &madness_handle << ">" << std::endl;
-        if( 0 != dague_handle_update_nbtask(&madness_handle, 1) ) {
-	  std::cout << "ERROR: dague_handle_update_nbtask!!" << std::endl;
-	}
+            std::cout << "ERROR: dague_enqueue!!" << std::endl;
+        }
+        std::cout << "dague_enqueue!! <" << &madness_handle << ">" << std::endl;
         if( 0 != dague_context_start(ThreadPool::parsec) ) {
-	  std::cout << "ERROR: dague_context_start!!" << std::endl;
-	}
+            std::cout << "ERROR: dague_context_start!!" << std::endl;
+        }
         //////////// Parsec Related End ////////////////////
 #elif HAVE_INTEL_TBB
-                /* This is removed to replace TBB or madness by parsec*/
+        /* This is removed to replace TBB or madness by parsec*/
 // #if HAVE_INTEL_TBB
 
         if(nthreads < 1)
@@ -530,9 +529,10 @@ namespace madness {
         }
         while (instance_ptr->nfinished != instance_ptr->nthreads);
 #else  /* HAVE_PARSEC */
-	/* Remove the fake task we used to keep the engine up and running */
-	dague_handle_update_nbtask(&madness_handle, -1);
-	dague_context_wait(parsec);
+        uint32_t nb = dague_atomic_add_32b( &madness_handle.nb_tasks, -1 );
+        if( nb == 0 )
+            dague_check_handle_status(&madness_handle);
+        dague_context_wait(parsec);
 #endif
 #ifdef MADNESS_TASK_PROFILING
         instance_ptr->main_thread.profiler().write_to_file();

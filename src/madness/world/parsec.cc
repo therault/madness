@@ -6,17 +6,24 @@
 // Here we initialize with the right child class
 #if HAVE_PARSEC
 namespace madness {
-  dague_hook_return_t release_madness_task (dague_execution_unit_t *eu, 
-					    dague_execution_context_t *exec_context)
-  {
-    char* s;
-    PoolTaskInterface *c;
-    s=(char*)exec_context;
-    s-=offsetof(PoolTaskInterface, exec_context);
-    c = (PoolTaskInterface*)s;
-    delete(c);
-    return DAGUE_HOOK_RETURN_DONE;
-  }
+    dague_hook_return_t release_madness_task (dague_execution_unit_t *eu, 
+                                              dague_execution_context_t *exec_context)
+    {
+        char* s;
+        PoolTaskInterface *c;
+        s=(char*)exec_context;
+        s-=offsetof(PoolTaskInterface, exec_context);
+        c = (PoolTaskInterface*)s;
+        delete(c);
+        return DAGUE_HOOK_RETURN_DONE;
+    }
+    
+    dague_hook_return_t complete_madness_task (dague_execution_unit_t *eu, 
+                                               dague_execution_context_t *exec_context)
+    {
+        dague_atomic_add_32b(&exec_context->dague_handle->nb_tasks, -1);
+        return DAGUE_HOOK_RETURN_DONE;
+    }
 
 // void c_run (void* s) {
 //   TaskInterface *c = (TaskInterface *)s;
@@ -122,7 +129,7 @@ const dague_function_t madness_function = {
     .iterate_successors = (dague_traverse_function_t *) NULL,
     .iterate_predecessors = (dague_traverse_function_t *) NULL,
     .release_deps = (dague_release_deps_t *) NULL,
-    .complete_execution = empty_hook, // complete MADNESS task and generate successors
+    .complete_execution = complete_madness_task, // complete MADNESS task and generate successors
     .new_task = (dague_new_task_function_t*) NULL,
     .release_task = release_madness_task, //object delete,
     .fini = (dague_hook_t *) NULL,

@@ -955,9 +955,9 @@ namespace madness {
             , barrier(nullptr)
         {
 #if HAVE_PARSEC
-	  init_exec_context();
+            init_exec_context();
 #endif
-	  count = 0;
+            count = 0;
         }
 
         /// Contructor setting teh speicified task attributes.
@@ -968,7 +968,7 @@ namespace madness {
             , barrier(attr.get_nthread()>1 ? new Barrier(attr.get_nthread()) : 0)
         {
 #if HAVE_PARSEC
-	  init_exec_context();
+            init_exec_context();
 #endif
             count = 0;
         }
@@ -1002,14 +1002,14 @@ namespace madness {
 
         /* This function initializes exec_context from the one in parsec.cpp*/
         void init_exec_context(void)
-          {
+        {
             exec_context.dague_handle = &madness::madness_handle;
             exec_context.function = &madness::madness_function;
             exec_context.chore_id = 0;
             exec_context.status = DAGUE_TASK_STATUS_NONE;
             exec_context.priority = 0;
             std::cout << "task interface constructor" << std::endl;
-          }
+        }
         //////////// Parsec Related End   ///////////////////
 #endif
 
@@ -1309,12 +1309,11 @@ namespace madness {
             //////////// Parsec Related Begin ////////////////////
             /* Initialize the execution context and give it to the scheduler*/
 #if HAVE_PARSEC
-	    std::cout << "adding a new task to parsec" << std::endl;
+            std::cout << "adding a new task to parsec" << std::endl;
             dague_execution_context_t *context = &(task->exec_context);
             DAGUE_LIST_ITEM_SINGLETON(context);
-	    if( 0 != dague_handle_update_nbtask(&madness_handle, 1) ) {
-	     std::cout << "dague_handle_update_nbtask!!" << std::endl;
-	    }
+            
+            dague_atomic_add_32b(&madness_handle.nb_tasks, 1);
             __dague_schedule(parsec->virtual_processes[0]->execution_units[0], context);
             //////////// Parsec Related End ////////////////////
 #elif HAVE_INTEL_TBB
